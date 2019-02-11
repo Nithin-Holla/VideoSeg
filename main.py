@@ -1,10 +1,9 @@
 import numpy as np
 import torch
-from torch import nn
-from torchvision import models, transforms
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from skimage.transform import resize
+import torch.nn.functional as F
 
 from CamVidDataset import CamVidDataset
 from SiameseNetwork import SiameseNetwork
@@ -35,7 +34,22 @@ if __name__ == '__main__':
             mask = (query_label == data.label_colors[obj]).all(-1)
             sub_mask = resize(mask, q_feat.shape[2:])
             sub_mask = torch.ByteTensor(sub_mask).expand_as(q_feat)
-            pass
+            fg_collection = q_feat[sub_mask].view(-1, q_feat.shape[1])
+            bg_collection = q_feat[sub_mask == 0].view(-1, q_feat.shape[1])
+            s_feat_normalized = F.normalize(s_feat.view(-1, q_feat.shape[1]))
+            if fg_collection.nelement() != 0:
+                fg_collection = F.normalize(fg_collection, dim=1, p=2)
+                fg_similarity = torch.matmul(s_feat_normalized, torch.t(fg_collection))
+            else:
+                fg_similarity = torch.tensor(0)
+            if bg_collection.nelement() != 0:
+                bg_collection = F.normalize(bg_collection, dim=1, p=2)
+                bg_similarity = torch.matmul(s_feat_normalized, torch.t(bg_collection))
+            else:
+                bg_similarity = torch.tensor(0)
+            print(obj)
+            print("FG ", fg_similarity.shape)
+            print("BG ", bg_similarity.shape)
             # plt.figure(obj)
             # plt.imshow(sub_mask, cmap='gray')
             # plt.waitforbuttonpress()
