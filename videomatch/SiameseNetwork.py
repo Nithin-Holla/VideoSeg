@@ -1,6 +1,5 @@
 from torch import nn
 from torchvision import models
-import torch.nn.functional as F
 
 
 class SiameseNetwork(nn.Module):
@@ -13,5 +12,4 @@ class SiameseNetwork(nn.Module):
     def forward(self, query_img, search_img):
         q_feat = self.cnn(query_img)
         s_feat = self.cnn(search_img)
-        # dist = F.pairwise_distance(q_feat, s_feat)
         return q_feat, s_feat
