@@ -8,12 +8,13 @@ import pandas as pd
 
 class CamVidDataset(Dataset):
 
-    def __init__(self, data_dir, img_dir, label_dir):
+    def __init__(self, data_dir, img_dir, label_dir, shape=(224, 224)):
         super(CamVidDataset, self).__init__()
         self.data_dir = img_dir
         self.image_paths = []
         self.label_paths = []
-        self.transform = transforms.Compose([transforms.Resize((224, 224)),
+        self.shape = shape
+        self.transform = transforms.Compose([transforms.Resize(shape),
                                              transforms.ToTensor(),
                                              transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                                   std=[0.229, 0.224, 0.225])])
@@ -29,16 +30,19 @@ class CamVidDataset(Dataset):
 
     def __getitem__(self, index):
         query_img_path = self.image_paths[index]
+        print(query_img_path)
         query_label_path = self.label_paths[index]
         query_img_name = query_img_path.split(os.sep)[-1].split('.')[0].split('_')[0]
         query_img = Image.open(query_img_path)
         query_label = Image.open(query_label_path)
         while True:
-            rand_index = np.random.randint(index - 5, index + 6)
-            if rand_index != index and 0 <= rand_index < self.__len__():
+            rand_index = index + 1
+            # if rand_index != index and 0 <= rand_index < self.__len__():
+            if 0 <= rand_index < self.__len__():
                 rand_img_path = self.image_paths[rand_index]
                 rand_img_name = rand_img_path.split(os.sep)[-1].split('.')[0].split('_')[0]
-                if rand_img_name == query_img_name:
+                # if rand_img_name == query_img_name:
+                if True:
                     rand_label_path = self.label_paths[rand_index]
                     break
         search_img = Image.open(rand_img_path)
