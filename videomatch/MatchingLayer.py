@@ -17,9 +17,9 @@ class MatchingLayer(nn.Module):
         # plt.figure()
         # plt.imshow(mask, cmap='gray')
         sub_mask = resize(mask, q_feat.shape[2:])
-        plt.figure()
-        plt.imshow(sub_mask, cmap='gray')
-        output_path = 'C:\\Users\\Pavilion\\Desktop'
+        # plt.figure()
+        # plt.imshow(sub_mask, cmap='gray')
+        # output_path = 'C:\\Users\\Pavilion\\Desktop'
         # plt.savefig(output_path + '\submask.png', bbox_inches='tight')
         # sub_mask = torch.ByteTensor(sub_mask).expand_as(q_feat).cuda()
         # fg_collection = q_feat[sub_mask].view(-1, q_feat.shape[1])
