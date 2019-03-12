@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 from skimage.transform import resize
 import torch
 import numpy as np
+import warnings
 
 from CamVidDataset import CamVidDataset
 from videomatch.VideoMatchNetwork import VideoMatchNetwork
@@ -21,12 +22,28 @@ if __name__ == '__main__':
     data = CamVidDataset(data_dir=data_dir, img_dir=img_dir, label_dir=label_dir)
     # dataloader = DataLoader(dataset=data, batch_size=1, shuffle=True)
     dataloader = DataLoader(dataset=data, batch_size=1, shuffle=False)
-    vm_net = VideoMatchNetwork(K=20, device='cuda', pretrained_model_dir=pretrained_model_dir).to(device)
+    vm_net = VideoMatchNetwork(K=1, c2=0.4, device='cuda', pretrained_model_dir=pretrained_model_dir).to(device)
 
     vm_net.eval()
 
     with torch.no_grad():
         # sample = iter(dataloader).next()
+
+        save_path = 'F:\Projects\Honours\Data\Results'
+        i = 1
+        for frame_pair, video_first_label in data.fetch_frame('0016E5'):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                label_pred = vm_net(frame_pair, data, video_first_label)
+            output = np.array(list(data.label_colors.values()))[label_pred.squeeze(0).cpu().numpy()]
+            plt.figure(1)
+            plt.imshow(output)
+            plt.savefig(save_path + "\\" + str(i) + ".png")
+            i += 1
+            print(i)
+            # plt.pause(3)
+        exit(0)
+
         i = 1
         for sample in iter(dataloader):
             if i == 5:

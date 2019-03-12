@@ -11,23 +11,23 @@ from videomatch.SiameseNetwork import SiameseNetwork
 
 class VideoMatchNetwork(nn.Module):
 
-    def __init__(self, pretrained_model_dir, K=20, device='cuda'):
+    def __init__(self, pretrained_model_dir, K=20, c2=0.4, device='cuda'):
         super(VideoMatchNetwork, self).__init__()
         self.device = torch.device(device)
         self.sm_net = SiameseNetwork(pretrained_model_dir, device=self.device)
         self.match_layer = MatchingLayer(K=K, device=self.device)
+        self.c2 = c2
 
     def forward(self, sample, data, query_label):
         q_feat, s_feat = self.sm_net(sample['query_img'].to(self.device), sample['search_img'].to(self.device))
-        # label_prob = torch.zeros(1, len(data.label_colors), 224, 224).cuda()#.to(device)
         label_prob = torch.zeros((224 * 224, len(data.label_colors))).to(self.device)
 
         for i, (obj, color) in enumerate(data.label_colors.items()):
             # if obj != 'Tree':
             #     continue
             fg_score, bg_score = self.match_layer(query_label, color, q_feat, s_feat)
-            fg_score_upsampled = F.interpolate(fg_score.unsqueeze(0).unsqueeze(0), size=data.shape, mode='bilinear')
-            bg_score_upsampled = F.interpolate(bg_score.unsqueeze(0).unsqueeze(0), size=data.shape, mode='bilinear')
+            fg_score_upsampled = F.interpolate(fg_score.unsqueeze(0).unsqueeze(0), size=data.shape, mode='bilinear', align_corners=False)
+            bg_score_upsampled = F.interpolate(bg_score.unsqueeze(0).unsqueeze(0), size=data.shape, mode='bilinear', align_corners=False)
             # score_concat = torch.cat((bg_score.view(-1, 1), fg_score.view(-1, 1)), dim=1)
             score_concat = torch.cat((bg_score_upsampled.view(-1, 1), fg_score_upsampled.view(-1, 1)), dim=1)
             label_prob[:, i] = F.softmax(score_concat, dim=1)[:, 1]
@@ -42,6 +42,8 @@ class VideoMatchNetwork(nn.Module):
             # obj_color = color
 
         label_pred = torch.argmax(label_prob, dim=1)
+        bg_pixels = (label_prob < self.c2).all(dim=1)
+        label_pred[bg_pixels] = 30  # Assign as void class
 
         # search_label = sample['search_label'].numpy()[0]
         # search_mask = (search_label == obj_color).all(-1)
